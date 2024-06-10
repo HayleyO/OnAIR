@@ -1,27 +1,29 @@
 import socket
+import asyncio
 from typing import Dict
-# Maybe later integrate complex reasoning? from onair.src.reasoning.complex_reasoning_interface import ComplexReasoningInterface
+# Maybe later integrate as complex reasoning? Not sure where to put this "meta-agent"
+# from onair.src.reasoning.complex_reasoning_interface import ComplexReasoningInterface
 
 
-class MetaAgentPlugin():
+class MetaAgent():
     def __init__(self, vehicle_name:str, fleet:Dict[str, (str, str)] = {}):
         """
         Parameters
         ----------
         vehicle_name : str
-            Unique ID or name for vehicle to be reference even if the vehicle is on the same IP and port as other vehicles (like in sim)
+            Unique ID or name for vehicle for reference
         fleet : Dict[str, (str, str)], defaults to empty
             A dictionary with a vehicle name that maps to a tuple with the vehicle IP address and port: [vehicle_name] -> (IP_address, Port)
 
         """
         # Note: The vehicle name is a way of uniquely describing the vehicle (to allow multiple vehicles on the same IP like through sim)
-        ## This may not be needed and can probably be worked around but keeping it in for now
+        ## This may not be needed and can probably be worked around but keeping it in for now? 
         self.vehicle_name = vehicle_name # A unique identifier for a vehicle
 
         # Server sockets for listening - used in address fleet book 
-        ## Each meta-agent onboard an agent should have a server with a unique address, port combination
+        ## Each meta-agent onboard an agent should have a server with a UNIQUE ip_address, port combination (either port or IP needs to be identifying)
         ### TODO: Intelligently get (IP, Port) - ex: if all the fleets have the same IP then the ports all need to be unique
-        self.server_socket = socket.socket()            # Create socket object for server socket
+        self.server_socket = socket.socket()            # Create socket object for server socket #socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         host, port = socket.gethostname(), 12345        # Set host IP address and port
         self.server_socket.bind((host, port))           # Bind that IP and port to the server socket
 
@@ -31,7 +33,8 @@ class MetaAgentPlugin():
         
         self.topic_dictionary = {} # Empty dictionary to be filled with topics to send and recieve information
 
-        # Keeping track of meta data for the frame
+        # Keeping track of meta data for the frame?
+        asyncio.run(self.listen())
 
     def add_vehicle_to_fleet(self, vehicle_name:str, ip_address:str, port:str):
         """Adds a vehicle's ip and port to fleet so it can be accessed.
@@ -65,13 +68,36 @@ class MetaAgentPlugin():
             # TODO: Implement server connection and send messages
             pass
 
-    def on_recieve(self, data):
+    async def listen(self):
+        ''' Listen indefinitely on a seperate thread for new information
+        '''
+        disconnect_message = "disconnect"
+        self.server_socket.listen(5) # Set server to listen
+        # Listen indefinitely 
+        while True:
+            connection, client_addr = self.server_socket.accept()     
+            connected = True
+            while connected:
+                msg_length = connection.recv(64).decode('UTF-8') # Assume the header is of length 64 and the format is UTF-8
+                if msg_length:
+                    msg_length = int(msg_length)
+                    msg = connection.recv(msg_length).decode('UTF-8')
+                    self.on_recieve(msg)
+                    if msg == disconnect_message:
+                        connected = False
+                    print(f"[{client_addr}] {msg}")
+                #connection.send("Msg received".encode(FORMAT))
+            # Close the connection with the client 
+            connection.close()
+   
 
-        # Check if from a subscribed to topic 
+    async def on_recieve(self, data):
+        # Check if from a subscribed to topic, if yes run callback async 
+        # Check if it's a topic dictionary update broadcast message
         pass
 
     def register_topic(self, topic_name:str):
-        # Broadcast new topic information to every agent in fleet, allowing for the list of topics to update
+        # Broadcast new topic information to every agent in fleet, allowing for the shared, onboard lists of topics to update
         pass
 
     def publish_to_topic(self, ):

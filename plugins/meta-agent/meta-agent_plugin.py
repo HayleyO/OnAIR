@@ -1,27 +1,35 @@
+import socket
 from typing import Dict
-from onair.src.ai_components.ai_plugin_abstract.ai_plugin import AIPlugin
+# Maybe later integrate complex reasoning? from onair.src.reasoning.complex_reasoning_interface import ComplexReasoningInterface
 
 
-class MetaAgentPlugin(AIPlugin):
-    def __init__(self, name, headers, fleet:Dict[str, (str, str)] = {}):
+class MetaAgentPlugin():
+    def __init__(self, vehicle_name:str, fleet:Dict[str, (str, str)] = {}):
         """
         Parameters
         ----------
-        name
-            The name as required by the AIPlugin Abstract
-        headers 
-            The headers as required by the AIPlugin Abstract
-        centralized : bool, defaults to True
-            A flag for the type of communication (centralized or decentralized)
+        vehicle_name : str
+            Unique ID or name for vehicle to be reference even if the vehicle is on the same IP and port as other vehicles (like in sim)
         fleet : Dict[str, (str, str)], defaults to empty
-            A dictionary with a vehicle name that maps to a tuple with the vehicle IP address and port: (IP_address, Port)
+            A dictionary with a vehicle name that maps to a tuple with the vehicle IP address and port: [vehicle_name] -> (IP_address, Port)
 
         """
-        super().__init__(name, headers)
-               # "Address book" of IPs and ports or ways to access other vehicles in fleet network
-        ## Note: The vehicle name in the dictionary is a way of uniquely describing the vehicle (even if they're on the same IP on sim)
-        self.fleet_address_book = fleet # A dictionary with a vehicle name that maps to a tuple with the vehicle IP address and port: (IP_address, Port)
-        self.topic_address_book = {} # Empty dictionary to be filled with topics to send and recieve information
+        # Note: The vehicle name is a way of uniquely describing the vehicle (to allow multiple vehicles on the same IP like through sim)
+        ## This may not be needed and can probably be worked around but keeping it in for now
+        self.vehicle_name = vehicle_name # A unique identifier for a vehicle
+
+        # Server sockets for listening - used in address fleet book 
+        ## Each meta-agent onboard an agent should have a server with a unique address, port combination
+        ### TODO: Intelligently get (IP, Port) - ex: if all the fleets have the same IP then the ports all need to be unique
+        self.server_socket = socket.socket()            # Create socket object for server socket
+        host, port = socket.gethostname(), 12345        # Set host IP address and port
+        self.server_socket.bind((host, port))           # Bind that IP and port to the server socket
+
+        # "Address book" of IPs and ports or ways to access server sockets of other vehicles in fleet network
+        ## The idea is that you know the vehicles in your fleet ahead of time and that is initalized in the code -- either manually typed in or through a config of some type
+        self.fleet_address_book = fleet
+        
+        self.topic_dictionary = {} # Empty dictionary to be filled with topics to send and recieve information
 
         # Keeping track of meta data for the frame
 
@@ -43,7 +51,7 @@ class MetaAgentPlugin(AIPlugin):
             print("ERROR: Make sure your vehicle name, ip address, and port aren't empty strings")
             
     def broadcast(self, message):
-        """Send message to every vehicle in fleet
+        """Send/publish message to every vehicle in fleet
 
         Parameters
         ----------
@@ -57,22 +65,17 @@ class MetaAgentPlugin(AIPlugin):
             # TODO: Implement server connection and send messages
             pass
 
-    def register_topic(self, ):
+    def on_recieve(self, data):
+
+        # Check if from a subscribed to topic 
+        pass
+
+    def register_topic(self, topic_name:str):
+        # Broadcast new topic information to every agent in fleet, allowing for the list of topics to update
+        pass
+
+    def publish_to_topic(self, ):
         pass
 
     def subscribe_to_topic(self, ):
-        pass
-
-
-
-    def update(self,low_level_data=[], high_level_data={}):
-        """
-        Given streamed data point, system should update internally
-        """
-        pass
-
-    def render_reasoning(self):
-        """
-        System should return its diagnosis, etc.
-        """
         pass

@@ -3,7 +3,7 @@ from onair.src.ai_components.ai_plugin_abstract.ai_plugin import AIPlugin
 
 
 class MetaAgentPlugin(AIPlugin):
-    def __init__(self, name, headers, centralized:bool=True, fleet:Dict[str, (str, str)] = {}):
+    def __init__(self, name, headers, fleet:Dict[str, (str, str)] = {}):
         """
         Parameters
         ----------
@@ -18,9 +18,7 @@ class MetaAgentPlugin(AIPlugin):
 
         """
         super().__init__(name, headers)
-       
-        self.centralized = centralized # Centralized or decentralized comm flag 
-        # "Address book" of IPs and ports or ways to access other vehicles in fleet network
+               # "Address book" of IPs and ports or ways to access other vehicles in fleet network
         ## Note: The vehicle name in the dictionary is a way of uniquely describing the vehicle (even if they're on the same IP on sim)
         self.fleet_address_book = fleet # A dictionary with a vehicle name that maps to a tuple with the vehicle IP address and port: (IP_address, Port)
         self.topic_address_book = {} # Empty dictionary to be filled with topics to send and recieve information
@@ -62,7 +60,7 @@ class MetaAgentPlugin(AIPlugin):
     def register_topic(self, ):
         pass
 
-    def subscribe_to_topic():
+    def subscribe_to_topic(self, ):
         pass
 
 

@@ -7,7 +7,8 @@ from typing import Dict, Callable
 # TODO:
 # 1. Topics initialized with topic stabalizing broadcast message
 # 2. Test an Agent 1, Agent 2 back and forth messaging system
-# 3. Finish up 
+# 3. What does decentralized or across networks look like? 
+# 4. Finish up 
 
 class MetaAgent():
     def __init__(self, vehicle_name:str, fleet:Dict[str, (str, str)] = {}):
@@ -54,7 +55,7 @@ class MetaAgent():
         """
         if bool(vehicle_name.strip()) and bool(ip_address.strip()) and bool(port.strip()):
             self.fleet_address_book[vehicle_name] = (ip_address, port)
-            # TODO: Ping for topic broadcast
+            # TODO: Ping for address book update broadcast
         else:
             print("ERROR: Make sure your vehicle name, ip address, and port aren't empty strings")
             
@@ -100,6 +101,7 @@ class MetaAgent():
         # Check if message is from self, ignore if it is
         # Check if from a subscribed to topic, if yes run callback async 
         # Check if it's a topic dictionary update broadcast message
+        # Check if it's an address book topic update broadcast message
         pass
 
     def register_topic(self, topic_name:str):

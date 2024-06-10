@@ -1,9 +1,13 @@
 import socket
 import asyncio
-from typing import Dict
+from typing import Dict, Callable
 # Maybe later integrate as complex reasoning? Not sure where to put this "meta-agent"
 # from onair.src.reasoning.complex_reasoning_interface import ComplexReasoningInterface
 
+# TODO:
+# 1. Topics initialized with topic stabalizing broadcast message
+# 2. Test an Agent 1, Agent 2 back and forth messaging system
+# 3. Finish up 
 
 class MetaAgent():
     def __init__(self, vehicle_name:str, fleet:Dict[str, (str, str)] = {}):
@@ -50,9 +54,11 @@ class MetaAgent():
         """
         if bool(vehicle_name.strip()) and bool(ip_address.strip()) and bool(port.strip()):
             self.fleet_address_book[vehicle_name] = (ip_address, port)
+            # TODO: Ping for topic broadcast
         else:
             print("ERROR: Make sure your vehicle name, ip address, and port aren't empty strings")
             
+
     def broadcast(self, message):
         """Send/publish message to every vehicle in fleet
 
@@ -90,8 +96,8 @@ class MetaAgent():
             # Close the connection with the client 
             connection.close()
    
-
     async def on_recieve(self, data):
+        # Check if message is from self, ignore if it is
         # Check if from a subscribed to topic, if yes run callback async 
         # Check if it's a topic dictionary update broadcast message
         pass
@@ -103,5 +109,7 @@ class MetaAgent():
     def publish_to_topic(self, ):
         pass
 
-    def subscribe_to_topic(self, ):
+    def subscribe_to_topic(self, topic_name:str, callback:Callable):
+        # Add agent to topic dictionary, broadcast topic dictionary updates
+        # Add agent callback method to topic dictionary
         pass

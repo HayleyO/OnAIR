@@ -1,5 +1,6 @@
 import json
 import socket
+from enum import Enum
 from typing import Callable
 from threading import Thread
 
@@ -8,9 +9,13 @@ from threading import Thread
 
 # TODO:
 # 1. Topics initialized with topic stabalizing broadcast message
-# 2. Test an Agent 1, Agent 2 back and forth messaging system
-# 3. What does decentralized or across networks look like? 
-# 4. Finish up 
+# 2. What does decentralized or across networks look like? 
+# 3. Finish up 
+
+class Message_Types(str, Enum):
+    Topic = "Topic",
+    Topic_Update_Broadcast = "Topic_Update_Broadcast",
+    Address_Book_Update_Broadcast = "Address_Book_Update_Broadcast",
 
 class MetaAgent():
     def __init__(self, vehicle_name:str, port:int, fleet:dict[str, (str, str)], ip_address:str=socket.gethostname(), topic_dictionary:dict[str, list[(str, Callable)]] = {}):
@@ -36,11 +41,11 @@ class MetaAgent():
         # Server sockets for listening - used in address fleet book 
         ## Each meta-agent onboard an agent should have a server with a UNIQUE ip_address, port combination (either port or IP needs to be identifying)
         ### TODO: Intelligently get (IP, Port) - ex: if all the fleets have the same IP then the ports all need to be unique
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Create socket object for server socket 
+        self.server_socket = socket.socket()  # Create socket object for server socket 
         host, port = ip_address, port                                           # Set host IP address and port
         self.server_socket.bind((host, port))                                   # Bind that IP and port to the server socket
 
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket = socket.socket()
         # "Address book" of IPs and ports or ways to access server sockets of other vehicles in fleet network
         ## The idea is that you know the vehicles in your fleet ahead of time and that is initalized in the code -- either manually typed in or through a config of some type
         self.fleet_address_book = fleet
@@ -72,7 +77,6 @@ class MetaAgent():
             # TODO: Ping for address book update broadcast
         else:
             print("ERROR: Make sure your vehicle name, ip address, and port aren't empty strings")
-            
 
     def broadcast(self, message):
         """Send/publish message to every vehicle in fleet
@@ -92,33 +96,41 @@ class MetaAgent():
     def listen(self):
         """ Listen indefinitely on a seperate thread for new information
         """
-        disconnect_message = "disconnect"
         self.server_socket.listen(5) # Set server to listen
         # Listen indefinitely 
         while True:
             connection, client_addr = self.server_socket.accept()     
-            connected = True
-            while connected:
-                msg_length = connection.recv(64).decode('UTF-8') # Assume the header is of length 64 and the format is UTF-8
-                if msg_length:
-                    msg_length = int(msg_length)
-                    msg = connection.recv(msg_length).decode('UTF-8')
-                    self.on_recieve(msg)
-                    if msg == disconnect_message:
-                        connected = False
-                    print(f"[{client_addr}] {msg}")
-                #connection.send("Msg received".encode(FORMAT))
+            with connection:
+                print(f"Connected by {client_addr}")
+                while True:
+                    data = connection.recv(1024).decode()
+                    if not data:
+                        break
+                    self.on_recieve(data)
             # Close the connection with the client 
             connection.close()
    
     def on_recieve(self, data):
-        print(data)
-        print(data.decode())
+        data = json.loads(data)
         # Check if message is from self, ignore if it is
-        # Check if from a subscribed to topic, if yes run callback async 
-        # Check if it's a topic dictionary update broadcast message
-        # Check if it's an address book topic update broadcast message
-        pass
+        if data['sender'] != self.vehicle_name:
+            # Check if from a subscribed to topic, if yes run callback async 
+            if data['message_type'] == Message_Types.Topic:
+                topic_name = data['topic_name']
+                msg_data = data['data']
+                list_of_subscribers = self.topic_dictionary[topic_name]
+                # NOTE: Is there a better way of doing this? Maybe topic dictionary could be restructured?
+                for subscriber in list_of_subscribers:
+                    vehicle = subscriber[0]
+                    if vehicle == self.vehicle_name:
+                        callback = subscriber[1]
+                        callback(msg_data)
+            # Check if it's an address book topic update broadcast message
+            elif data['message_type'] == Message_Types.Address_Book_Update_Broadcast:
+                raise NotImplementedError
+            # Check if it's a topic dictionary update broadcast message
+            elif data['message_type'] == Message_Types.Topic_Update_Broadcast:
+                raise NotImplementedError
 
     def register_topic(self, topic_name:str):
         # Broadcast new topic information to every agent in fleet, allowing for the shared, onboard lists of topics to update
@@ -127,7 +139,8 @@ class MetaAgent():
     def publish_to_topic(self, topic_name:str, data):
         try:
             # Setup topic data
-            topic_data = json.dumps({'message_type':'topic', 'topic_name':topic_name, 'sender': self.vehicle_name,'data': data}).encode()
+            ## NOTE: Probably a better way to do this with a more unified object somewhere
+            topic_data = json.dumps({'message_type': Message_Types.Topic, 'topic_name':topic_name, 'sender': self.vehicle_name,'data': data}).encode()
             list_of_subscribers = self.topic_dictionary[topic_name]
             for subscriber in list_of_subscribers:
                 vehicle = subscriber[0]
@@ -136,7 +149,7 @@ class MetaAgent():
                     self.client_socket.sendall(topic_data)
                     self.client_socket.close()
         except Exception as e:
-            print(f"ERROR, error publishing to topic {topic_name}: {e}")
+            print(f"ERROR, error publishing to topic '{topic_name}': {e}")
 
     def subscribe_to_topic(self, topic_name:str, callback:Callable):
         # Add agent to topic dictionary, broadcast topic dictionary updates

@@ -87,11 +87,9 @@ class MetaAgent():
             Message to be sent
         """
         for vehicle in self.fleet_address_book:
-            ip_address = self.fleet_address_book[vehicle][0]
-            port = self.fleet_address_book[vehicle][1]
-
-            # TODO: Implement server connection and send messages
-            pass
+            self.client_socket.connect(self.fleet_address_book[vehicle])
+            self.client_socket.sendall(message)
+            self.client_socket.close()
 
     def listen(self):
         """ Listen indefinitely on a seperate thread for new information

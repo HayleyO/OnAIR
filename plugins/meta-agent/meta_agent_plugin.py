@@ -128,11 +128,14 @@ class MetaAgent():
                 raise NotImplementedError
             # Check if it's a topic dictionary update broadcast message
             elif data['message_type'] == Message_Types.Topic_Update_Broadcast:
-                raise NotImplementedError
-
-    def register_topic(self, topic_name:str):
-        # Broadcast new topic information to every agent in fleet, allowing for the shared, onboard lists of topics to update
-        pass
+                topic_name = data['topic_name']
+                try:
+                    if topic_name not in self.topic_dictionary:
+                        self.topic_dictionary[topic_name] = [(data['sender'], None)]
+                    else:
+                        self.topic_dictionary[topic_name].append((data['sender'], None))
+                except Exception as e:
+                    print(f"ERROR adding topic, '{topic_name}', to dictionary: {e}")
 
     def publish_to_topic(self, topic_name:str, data):
         try:
@@ -150,6 +153,10 @@ class MetaAgent():
             print(f"ERROR, error publishing to topic '{topic_name}': {e}")
 
     def subscribe_to_topic(self, topic_name:str, callback:Callable):
-        # Add agent to topic dictionary, broadcast topic dictionary updates
-        # Add agent callback method to topic dictionary
-        pass
+        if topic_name in self.topic_dictionary:
+            self.topic_dictionary[topic_name] = []
+        # Add agent to topic dictionary and agent callback, 
+        self.topic_dictionary[topic_name].append((self.vehicle_name, callback))
+        topic_message = json.dumps({'message_type': Message_Types.Topic_Update_Broadcast, 'topic_name':topic_name, 'sender': self.vehicle_name, 'data': None}).encode()
+        # Broadcast topic dictionary updates
+        self.broadcast(topic_message)

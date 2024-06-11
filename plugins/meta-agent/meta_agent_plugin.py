@@ -50,6 +50,7 @@ class MetaAgent():
         # "Topic book" which has topic names, and then list of subscribed agents and their callable return. 
         ## You shouldn't know the callable return of other agents, so that may be "None"
         ### TODO: Smarter, object-oriented way of storing topic information? Topics may have certain type of data structures, etc. 
+        ### TODO PART 2: Automatically build a ping dictionary based on existing known fleet? Then let subscribe to topic build up the topic dictionary?
         self.topic_dictionary = topic_dictionary # Keys are topic names, values are lists of vehicle names who are subscribed to that topic
 
         # Keeping track of meta data for the frame?

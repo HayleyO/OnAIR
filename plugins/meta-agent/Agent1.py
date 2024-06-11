@@ -1,6 +1,12 @@
 import time
 from meta_agent_plugin import MetaAgent
 
+'''
+NOTE THIS IS JUST FOR TESTING PROOF OF CONCEPT CONNECTIVITY
+
+IN TERMS OF INITIALIZING TOPIC DICTIONARY AND FLEET DICTIONARY I'M SURE THERE'S A BETTER WAY? 
+'''
+
 def response(data):
     print(data)
 

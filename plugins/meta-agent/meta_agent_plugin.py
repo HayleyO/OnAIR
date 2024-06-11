@@ -1,7 +1,8 @@
 import json
 import socket
-import asyncio
 from typing import Callable
+from threading import Thread
+
 # Maybe later integrate as complex reasoning? Not sure where to put this "meta-agent"
 # from onair.src.reasoning.complex_reasoning_interface import ComplexReasoningInterface
 
@@ -35,9 +36,9 @@ class MetaAgent():
         # Server sockets for listening - used in address fleet book 
         ## Each meta-agent onboard an agent should have a server with a UNIQUE ip_address, port combination (either port or IP needs to be identifying)
         ### TODO: Intelligently get (IP, Port) - ex: if all the fleets have the same IP then the ports all need to be unique
-        self.server_socket = socket.socket()            # Create socket object for server socket #socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        host, port = ip_address, port        # Set host IP address and port
-        self.server_socket.bind((host, port))           # Bind that IP and port to the server socket
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Create socket object for server socket 
+        host, port = ip_address, port                                           # Set host IP address and port
+        self.server_socket.bind((host, port))                                   # Bind that IP and port to the server socket
 
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # "Address book" of IPs and ports or ways to access server sockets of other vehicles in fleet network
@@ -50,8 +51,9 @@ class MetaAgent():
 
         # Keeping track of meta data for the frame?
 
-        # Run the server to listen asynchronously indefinitely 
-        asyncio.run(self.listen())
+        # Run the server to listen asynchronously indefinitely
+        thread = Thread(target=self.listen, daemon=True)
+        thread.start()
 
     def add_vehicle_to_fleet(self, vehicle_name:str, ip_address:str, port:str):
         """Adds a vehicle's ip and port to fleet so it can be accessed.
@@ -87,9 +89,9 @@ class MetaAgent():
             # TODO: Implement server connection and send messages
             pass
 
-    async def listen(self):
-        ''' Listen indefinitely on a seperate thread for new information
-        '''
+    def listen(self):
+        """ Listen indefinitely on a seperate thread for new information
+        """
         disconnect_message = "disconnect"
         self.server_socket.listen(5) # Set server to listen
         # Listen indefinitely 
@@ -109,7 +111,7 @@ class MetaAgent():
             # Close the connection with the client 
             connection.close()
    
-    async def on_recieve(self, data):
+    def on_recieve(self, data):
         print(data)
         print(data.decode())
         # Check if message is from self, ignore if it is

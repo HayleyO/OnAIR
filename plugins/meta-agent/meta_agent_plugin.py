@@ -8,9 +8,7 @@ from threading import Thread
 # from onair.src.reasoning.complex_reasoning_interface import ComplexReasoningInterface
 
 # TODO:
-# 1. Topics initialized with topic stabalizing broadcast message
-# 2. What does decentralized or across networks look like? 
-# 3. Finish up 
+# 1. What does decentralized or across networks look like? 
 
 class Message_Types(str, Enum):
     Topic = "Topic",
@@ -74,7 +72,8 @@ class MetaAgent():
         """
         if bool(vehicle_name.strip()) and bool(ip_address.strip()) and bool(port.strip()):
             self.fleet_address_book[vehicle_name] = (ip_address, port)
-            # TODO: Ping for address book update broadcast
+            topic_message = json.dumps({'message_type': Message_Types.Address_Book_Update_Broadcast, 'topic_name': None, 'sender': vehicle_name, 'data': (ip_address, port)}).encode()
+            self.broadcast(topic_message)
         else:
             print("ERROR: Make sure your vehicle name, ip address, and port aren't empty strings")
 
@@ -125,7 +124,7 @@ class MetaAgent():
                         callback(msg_data)
             # Check if it's an address book topic update broadcast message
             elif data['message_type'] == Message_Types.Address_Book_Update_Broadcast:
-                raise NotImplementedError
+                self.fleet_address_book[data['sender']] = data['data']
             # Check if it's a topic dictionary update broadcast message
             elif data['message_type'] == Message_Types.Topic_Update_Broadcast:
                 topic_name = data['topic_name']

@@ -109,6 +109,13 @@ class MetaAgent():
             connection.close()
    
     def on_recieve(self, data):
+        """On Recieving information from a client, handle it depending on the type of message
+
+        Parameters
+        ----------
+        data 
+            JSON which include sender and message type, and may include a topic name and data relating to that topic
+        """
         data = json.loads(data)
         # Check if message is from self, ignore if it is
         if data['sender'] != self.vehicle_name:
@@ -138,6 +145,13 @@ class MetaAgent():
                     print(f"ERROR adding topic, '{topic_name}', to dictionary: {e}")
 
     def publish_to_topic(self, topic_name:str, data):
+        """Send information to every vehicle subscribed to this topic name
+        
+        Parameters
+        ----------
+        data 
+            Data to send in the message, must be JSON serializable
+        """
         try:
             # Setup topic data
             ## NOTE: Probably a better way to do this with a more unified object somewhere
@@ -153,6 +167,16 @@ class MetaAgent():
             print(f"ERROR, error publishing to topic '{topic_name}': {e}")
 
     def subscribe_to_topic(self, topic_name:str, callback:Callable):
+        """Add vehicle to topic in topic dictionary, creating a topic in the dictionary if it doesn't exist. 
+        Then, broadcast the updated topic to all known vehicles in the fleet so they can update known topics as well.
+        
+        Parameters
+        ----------
+        topic_name : str
+            Name of the message being created and/or subscribed to 
+        callback : Callable
+            Callable function that takes in a data argument and handles the information independently
+        """
         if topic_name in self.topic_dictionary:
             self.topic_dictionary[topic_name] = []
         # Add agent to topic dictionary and agent callback, 

@@ -19,7 +19,6 @@ class Plugin(AIPlugin):
         full_path = os.path.join(os.path.dirname(__file__), path, name)
         model = Twin(latent_dim=25, lr=0.1, margin=0.2)
         model.load_state_dict(torch.load(full_path))
-        model.eval()
         return model
 
     def load_trained_resoner(self, path, name):
